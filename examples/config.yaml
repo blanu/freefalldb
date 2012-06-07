@@ -1,0 +1,9 @@
+appname: example
+version: 1
+actions:
+  - testAction
+views:
+  - testView
+models:
+  - testModel
+
