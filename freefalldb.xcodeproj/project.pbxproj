@@ -38,6 +38,11 @@
 		89B773A91581167E0027E13E /* api.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = api.py; sourceTree = "<group>"; };
 		89B773AA1581167E0027E13E /* app.yaml */ = {isa = PBXFileReference; lastKnownFileType = text; path = app.yaml; sourceTree = "<group>"; };
 		89B773AB1581167E0027E13E /* web.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = web.py; sourceTree = "<group>"; };
+		89BF94CD15829054008EA2A6 /* transform.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = transform.py; sourceTree = "<group>"; };
+		89BF94CF158293E9008EA2A6 /* storage.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = storage.py; sourceTree = "<group>"; };
+		89BF94D015829E20008EA2A6 /* models.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = models.py; sourceTree = "<group>"; };
+		89DE1FB815879C9100917330 /* modelInfo.py */ = {isa = PBXFileReference; path = modelInfo.py; sourceTree = "<group>"; };
+		89DE1FBA1587AE2B00917330 /* queue.yaml */ = {isa = PBXFileReference; lastKnownFileType = text; path = queue.yaml; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -165,6 +170,7 @@
 		89B7738A1581167E0027E13E /* examples */ = {
 			isa = PBXGroup;
 			children = (
+				89DE1FBA1587AE2B00917330 /* queue.yaml */,
 				89B7738B1581167E0027E13E /* config.yaml */,
 			);
 			path = examples;
@@ -182,7 +188,10 @@
 		89B773921581167E0027E13E /* src */ = {
 			isa = PBXGroup;
 			children = (
+				89BF94D015829E20008EA2A6 /* models.py */,
 				89B773931581167E0027E13E /* generic.py */,
+				89BF94CD15829054008EA2A6 /* transform.py */,
+				89BF94CF158293E9008EA2A6 /* storage.py */,
 				894A8AFB158130B6004F88D0 /* model.py */,
 			);
 			path = src;
@@ -195,6 +204,7 @@
 				89B773981581167E0027E13E /* api.py */,
 				89B773991581167E0027E13E /* app.yaml */,
 				89B7739A1581167E0027E13E /* web.py */,
+				89DE1FB815879C9100917330 /* modelInfo.py */,
 			);
 			path = templates;
 			sourceTree = "<group>";

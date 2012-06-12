@@ -5,5 +5,7 @@ actions:
 views:
   - testView
 models:
-  - testModel
+  - name: testModel
+    type: bag
+    
 

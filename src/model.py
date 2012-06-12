@@ -1,10 +1,8 @@
 from django.utils import simplejson as parser
 
 class TransactionMonad:
-  transforms=[]
-  
   def __init__(self):
-    pass
+    self.transforms=[]
 
   def add(self, path, item):
     self.transforms.append({'path': path, 'type': 'add', 'args': item})

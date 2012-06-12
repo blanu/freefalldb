@@ -63,6 +63,9 @@ def compile():
   copy('../examples/queue.yaml', 'gen/server/queue.yaml')
   copy('../lib/jsonrpc', 'gen/server/jsonrpc')
   copy('../src/model.py', 'gen/server/model.py')
+  copy('../src/transform.py', 'gen/server/transform.py')
+  copy('../src/storage.py', 'gen/server/storage.py')
+  copy('../src/models.py', 'gen/server/models.py')
   copy('../templates/web.py', 'gen/server/web.py')
 
   files=os.listdir('app/lib')
@@ -81,6 +84,7 @@ def compile():
   actions=data['actions']
   views=data['views']
   pages=actions+views
+  models=data['models']
 
   actionMethods=[]
   for action in actions:
@@ -129,6 +133,7 @@ def compile():
     viewMethods.append({'name':name, 'jargs':jargs, 'fargs':fargs, 'cargs':cargs, 'code':body})
 
   generate('gen/server/api.py', 'api.py', {'actions': actionMethods, 'views': viewMethods})
+  generate('gen/server/modelInfo.py', 'modelInfo.py', {'models': models})
 
   ensure('gen/client')
   ensure('gen/client/py')
@@ -140,6 +145,7 @@ def compile():
     generate('gen/client/py/'+action+'.py', 'client.py', {'appname': appname, 'service': 'actions', 'method': action})
   for view in views:
     generate('gen/client/py/'+view+'.py', 'client.py', {'appname': appname, 'service': 'views', 'method': view})
+    
 
 @task
 def deploy():
