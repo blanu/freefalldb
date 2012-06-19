@@ -1,8 +1,12 @@
 import logging
 
+from google.appengine.api import memcache
+
 from generic import JsonRpcService
 from model import TransactionMonad
 from transform import applyAction
+
+from models import View
 
 class ActionService(JsonRpcService): #foreach($action in $actions)
   def json_${action.name}($action.jargs): 
@@ -17,13 +21,19 @@ class ActionService(JsonRpcService): #foreach($action in $actions)
 #end
 
 
-class ViewService(JsonRpcService): #foreach($view in $views)
-  def json_${view.name}($view.jargs): 
-    state=TransactionMonad()   
-    self.${view.name}($view.cargs)
-    return None
-    
-  def ${view.name}($view.fargs): #foreach($line in $view.code)
-    $line #end
-#end
+def fetchView(name):
+  json = memcache.get(name)
+  if json is not None:
+    return str(json)
+  else:
+    view=View.all().filter('name =', name).get()
+    if view is not None and view.json is not None:
+      memcache.add(name, view.json, 10)
+      return str(view.json)
+    else:
+      logging.error('No data for view '+str(name))
 
+class ViewService(JsonRpcService): #foreach($view in $views)
+  def json_${view.name}(self): 
+    return fetchView('$view.name')
+#end

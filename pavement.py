@@ -9,6 +9,8 @@ from paver.path import *
 
 from airspeed import CachingFileLoader
 
+from json import dumps
+
 def ensure(path):
   if not os.path.exists(path):
     print('mkdir '+str(path))
@@ -64,6 +66,7 @@ def compile():
   copy('../lib/jsonrpc', 'gen/server/jsonrpc')
   copy('../src/model.py', 'gen/server/model.py')
   copy('../src/transform.py', 'gen/server/transform.py')
+  copy('../src/transformUtils.py', 'gen/server/transformUtils.py')
   copy('../src/storage.py', 'gen/server/storage.py')
   copy('../src/models.py', 'gen/server/models.py')
   copy('../templates/web.py', 'gen/server/web.py')
@@ -82,8 +85,9 @@ def compile():
   generate('gen/server/app.yaml', 'app.yaml', {'appname': appname, 'version': version})  
   
   actions=data['actions']
+  transforms=data['transforms']
   views=data['views']
-  pages=actions+views
+  pages=actions.keys()+views
   models=data['models']
 
   actionMethods=[]
@@ -108,6 +112,31 @@ def compile():
     while body[-1]=='':
       body=body[:-1]
     actionMethods.append({'name':name, 'jargs':jargs, 'fargs':fargs, 'cargs':cargs, 'code':body})  
+
+  triggers=[]
+  transformMethods=[]
+  for transform in transforms:
+    transformValues=transforms[transform]
+    for trigger in transformValues['triggers']:
+      triggers.append({'transform': transform, 'path': trigger})
+    f=open('app/transforms/'+transform+'.py')
+    data=f.read()
+    f.close()
+    firstLine=data.split("\n")[0]
+    name=firstLine.split(' ')[1].split('(')[0]
+    args=[arg.strip() for arg in firstLine.split('(')[1].split(')')[0].split(',')]
+    while len(args)>0 and args[-1]=='':
+      args=args[:-1]
+    args=', '.join(args)
+    body=data.split("\n")[1:]
+    while body[-1].strip()=='':
+      body=body[:-1]
+      
+    inputs=transformValues['inputs']
+    output=transformValues['output']
+    inputStr=', '.join(inputs)
+    cargs=', '.join(['changes']+inputs+['state'])
+    transformMethods.append({'name':name, 'args':args, 'cargs':cargs, 'code':body, 'inputs':inputs, 'inputStr':inputStr, 'output':transformValues['output']})
   
   viewMethods=[]
   for view in views:
@@ -133,7 +162,9 @@ def compile():
     viewMethods.append({'name':name, 'jargs':jargs, 'fargs':fargs, 'cargs':cargs, 'code':body})
 
   generate('gen/server/api.py', 'api.py', {'actions': actionMethods, 'views': viewMethods})
+  generate('gen/server/transforms.py', 'transforms.py', {'transforms': transformMethods})
   generate('gen/server/modelInfo.py', 'modelInfo.py', {'models': models})
+  generate('gen/server/triggerInfo.py', 'triggerInfo.py', {'triggers': triggers})
 
   ensure('gen/client')
   ensure('gen/client/py')
@@ -142,7 +173,7 @@ def compile():
   copy('../lib/jsonrpc', 'gen/client/py/lib/jsonrpc')
 
   for action in actions:
-    generate('gen/client/py/'+action+'.py', 'client.py', {'appname': appname, 'service': 'actions', 'method': action})
+    generate('gen/client/py/'+action+'.py', 'client.py', {'appname': appname, 'service': 'actions', 'method': action, 'types': dumps(actions[action])})
   for view in views:
     generate('gen/client/py/'+view+'.py', 'client.py', {'appname': appname, 'service': 'views', 'method': view})
     

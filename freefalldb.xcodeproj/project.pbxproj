@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		891E5D5A158970C60087C592 /* scores.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = scores.py; sourceTree = "<group>"; };
 		894A8AFB158130B6004F88D0 /* model.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = model.py; sourceTree = "<group>"; };
 		894A8B001581420A004F88D0 /* report.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = report.py; sourceTree = "<group>"; };
 		894A8B021581420A004F88D0 /* generic.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = generic.py; sourceTree = "<group>"; };
@@ -41,7 +42,11 @@
 		89BF94CD15829054008EA2A6 /* transform.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = transform.py; sourceTree = "<group>"; };
 		89BF94CF158293E9008EA2A6 /* storage.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = storage.py; sourceTree = "<group>"; };
 		89BF94D015829E20008EA2A6 /* models.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = models.py; sourceTree = "<group>"; };
-		89DE1FB815879C9100917330 /* modelInfo.py */ = {isa = PBXFileReference; path = modelInfo.py; sourceTree = "<group>"; };
+		89C39C481590D07500271216 /* transforms.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = transforms.py; sourceTree = "<group>"; };
+		89C39C4A1590D99F00271216 /* transformUtils.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = transformUtils.py; sourceTree = "<group>"; };
+		89C39C4C1590E11700271216 /* highest.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = highest.py; sourceTree = "<group>"; };
+		89C39C4D1591110400271216 /* triggerInfo.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = triggerInfo.py; sourceTree = "<group>"; };
+		89DE1FB815879C9100917330 /* modelInfo.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = modelInfo.py; sourceTree = "<group>"; };
 		89DE1FBA1587AE2B00917330 /* queue.yaml */ = {isa = PBXFileReference; lastKnownFileType = text; path = queue.yaml; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -60,9 +65,9 @@
 			isa = PBXGroup;
 			children = (
 				894A8AFF1581420A004F88D0 /* actions */,
+				89C39C4B1590E11700271216 /* transforms */,
 				894A8B011581420A004F88D0 /* lib */,
 				894A8B041581420A004F88D0 /* models */,
-				894A8B051581420A004F88D0 /* transformations */,
 				894A8B061581420A004F88D0 /* views */,
 			);
 			path = app;
@@ -92,17 +97,11 @@
 			path = models;
 			sourceTree = "<group>";
 		};
-		894A8B051581420A004F88D0 /* transformations */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = transformations;
-			sourceTree = "<group>";
-		};
 		894A8B061581420A004F88D0 /* views */ = {
 			isa = PBXGroup;
 			children = (
 				894A8B071581420A004F88D0 /* highScores.py */,
+				891E5D5A158970C60087C592 /* scores.py */,
 			);
 			path = views;
 			sourceTree = "<group>";
@@ -191,6 +190,7 @@
 				89BF94D015829E20008EA2A6 /* models.py */,
 				89B773931581167E0027E13E /* generic.py */,
 				89BF94CD15829054008EA2A6 /* transform.py */,
+				89C39C4A1590D99F00271216 /* transformUtils.py */,
 				89BF94CF158293E9008EA2A6 /* storage.py */,
 				894A8AFB158130B6004F88D0 /* model.py */,
 			);
@@ -202,9 +202,11 @@
 			children = (
 				894A8B121581472B004F88D0 /* client.py */,
 				89B773981581167E0027E13E /* api.py */,
+				89C39C481590D07500271216 /* transforms.py */,
 				89B773991581167E0027E13E /* app.yaml */,
 				89B7739A1581167E0027E13E /* web.py */,
 				89DE1FB815879C9100917330 /* modelInfo.py */,
+				89C39C4D1591110400271216 /* triggerInfo.py */,
 			);
 			path = templates;
 			sourceTree = "<group>";
@@ -286,6 +288,14 @@
 				89B773AB1581167E0027E13E /* web.py */,
 			);
 			path = gen;
+			sourceTree = "<group>";
+		};
+		89C39C4B1590E11700271216 /* transforms */ = {
+			isa = PBXGroup;
+			children = (
+				89C39C4C1590E11700271216 /* highest.py */,
+			);
+			path = transforms;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

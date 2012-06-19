@@ -1,6 +1,10 @@
 from google.appengine.ext import db
 from google.appengine.ext.db import polymodel
 
+class View(db.Model):
+  name=db.StringProperty(required=True)
+  json=db.TextProperty(required=True)
+
 class CollectionModel(polymodel.PolyModel):
   pass
   

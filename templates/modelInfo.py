@@ -6,6 +6,6 @@ modelNames=[
 
 modelTypes={
   #foreach($model in $models)
-    '$model.name': '$model.type'
+    '$model.name': '$model.type',
   #end
 }
