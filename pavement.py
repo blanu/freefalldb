@@ -14,7 +14,7 @@ from json import dumps
 def ensure(path):
   if not os.path.exists(path):
     print('mkdir '+str(path))
-    os.mkdir(path)
+    os.makedirs(path)
 
 def copy(src, dst):
   print('Create '+str(dst))
@@ -54,36 +54,19 @@ def new(args):
   copy('src/generic.py', name+'/app/lib/generic.py')
   copy('src/util.py', name+'/app/lib/util.py')
 
-@task
-def compile():
-  if not os.path.exists('config/config.yaml'):
-    return
-
-  ensure('gen')
-  ensure('gen/server')
-
-  copy('../examples/queue.yaml', 'gen/server/queue.yaml')
-  copy('../lib/jsonrpc', 'gen/server/jsonrpc')
-  copy('../src/model.py', 'gen/server/model.py')
-  copy('../src/transform.py', 'gen/server/transform.py')
-  copy('../src/transformUtils.py', 'gen/server/transformUtils.py')
-  copy('../src/storage.py', 'gen/server/storage.py')
-  copy('../src/models.py', 'gen/server/models.py')
-  copy('../templates/web.py', 'gen/server/web.py')
-
-  files=os.listdir('app/lib')
-  for filename in files:
-    copy('app/lib/'+filename, 'gen/server/'+filename)
-
+def parseConfig():
   f=open('config/config.yaml')
   s=f.read()
   f.close()
   data=yaml.load(s)
   appname=data['appname']
+  capname=appname.capitalize()
   version=data['version']
-  
-  generate('gen/server/app.yaml', 'app.yaml', {'appname': appname, 'version': version})  
-  
+  package=data['package']
+  packagePath=package.replace('.', '/')
+
+  generate('gen/server/app.yaml', 'app.yaml', {'appname': appname, 'version': version})
+
   actions=data['actions']
   transforms=data['transforms']
   views=data['views']
@@ -108,10 +91,28 @@ def compile():
       jargs=', '.join(['self']+args)
       fargs=', '.join(['self', 'state']+args)
       cargs=', '.join(['state']+args)
+
+    targs=[]
+    for x in range(len(args)):
+      arg=args[x]
+      argType=actions[action][x]
+      if argType=='string':
+        targs.append('String '+arg)
+      elif argType=='float':
+        targs.append('Float '+arg)
+      elif argType=='map':
+        targs.append('Map '+arg)
+      elif argType=='list':
+        targs.append('List '+arg)
+      else:
+        print('Unknown targs type: '+str(type(arg)))
+    targs=', '.join(targs)
+    args=', '.join(args)
+
     body=[line.strip() for line in data.split("\n")[1:]]
     while body[-1]=='':
       body=body[:-1]
-    actionMethods.append({'name':name, 'jargs':jargs, 'fargs':fargs, 'cargs':cargs, 'code':body})  
+    actionMethods.append({'name':name, 'jargs':jargs, 'fargs':fargs, 'cargs':cargs, 'targs':targs, 'args':args, 'code':body})
 
   triggers=[]
   transformMethods=[]
@@ -131,53 +132,108 @@ def compile():
     body=data.split("\n")[1:]
     while body[-1].strip()=='':
       body=body[:-1]
-      
-    inputs=transformValues['inputs']
+
+    if 'inputs' in transformValues:
+      inputs=transformValues['inputs']
+    else:
+      inputs=[]
     output=transformValues['output']
     inputStr=', '.join(inputs)
     cargs=', '.join(['changes']+inputs+['state'])
     transformMethods.append({'name':name, 'args':args, 'cargs':cargs, 'code':body, 'inputs':inputs, 'inputStr':inputStr, 'output':transformValues['output']})
-  
+
   viewMethods=[]
   for view in views:
-    f=open('app/views/'+view+'.py')
-    data=f.read()
-    f.close()
-    firstLine=data.split("\n")[0]
-    name=firstLine.split(' ')[1].split('(')[0]
-    args=[arg.strip() for arg in firstLine.split('(')[1].split(')')[0].split(',')]
-    while len(args)>0 and args[-1]=='':
-      args=args[:-1]
-    if len(args)==0:
-      jargs='self'
-      fargs='self, state'
-      cargs='state'
-    else:
-      jargs=', '.join(['self']+args)
-      fargs=', '.join(['self', 'state']+args)
-      cargs=', '.join(['state']+args)
-    body=[line.strip() for line in data.split("\n")[1:]]
-    while body[-1]=='':
-      body=body[:-1]
-    viewMethods.append({'name':name, 'jargs':jargs, 'fargs':fargs, 'cargs':cargs, 'code':body})
+    viewMethods.append({'name':view})
+
+  return appname, capname, version, package, packagePath, actions, models, triggers, views, actionMethods, transformMethods, viewMethods
+
+@task
+def compile():
+  call_task('server')
+  call_task('client')
+
+@task
+def server():
+  if not os.path.exists('config/config.yaml'):
+    return
+
+  ensure('gen')
+  ensure('gen/server')
+
+  copy('../examples/queue.yaml', 'gen/server/queue.yaml')
+  copy('../src/index.yaml', 'gen/server/index.yaml')
+  copy('../lib/jsonrpc', 'gen/server/jsonrpc')
+  copy('../src/model.py', 'gen/server/model.py')
+  copy('../src/transform.py', 'gen/server/transform.py')
+  copy('../src/transformUtils.py', 'gen/server/transformUtils.py')
+  copy('../src/storage.py', 'gen/server/storage.py')
+  copy('../src/models.py', 'gen/server/models.py')
+  copy('../templates/web.py', 'gen/server/web.py')
+
+  files=os.listdir('app/lib')
+  for filename in files:
+    copy('app/lib/'+filename, 'gen/server/'+filename)
+
+  appname, capname, version, package, packagePath, actions, models, triggers, views, actionMethods, transformMethods, viewMethods=parseConfig()
 
   generate('gen/server/api.py', 'api.py', {'actions': actionMethods, 'views': viewMethods})
   generate('gen/server/transforms.py', 'transforms.py', {'transforms': transformMethods})
   generate('gen/server/modelInfo.py', 'modelInfo.py', {'models': models})
   generate('gen/server/triggerInfo.py', 'triggerInfo.py', {'triggers': triggers})
 
+@task
+def client():
+  call_task('py')
+  call_task('android')
+
+@task
+def py():
+  if not os.path.exists('config/config.yaml'):
+    return
+
+  appname, capname, version, package, packagePath, actions, models, triggers, views, actionMethods, transformMethods, viewMethods=parseConfig()
+
+  ensure('gen')
   ensure('gen/client')
   ensure('gen/client/py')
   ensure('gen/client/py/lib')
-  
+
   copy('../lib/jsonrpc', 'gen/client/py/lib/jsonrpc')
 
   for action in actions:
     generate('gen/client/py/'+action+'.py', 'client.py', {'appname': appname, 'service': 'actions', 'method': action, 'types': dumps(actions[action])})
   for view in views:
     generate('gen/client/py/'+view+'.py', 'client.py', {'appname': appname, 'service': 'views', 'method': view})
-    
+
+def shell(cmd):
+  print('Executing '+str(cmd))
+  os.system(cmd)
 
 @task
+def android():
+  if not os.path.exists('config/config.yaml'):
+    return
+
+  appname, capname, version, package, packagePath, actions, models, triggers, views, actionMethods, transformMethods, viewMethods=parseConfig()
+
+  ensure('gen')
+  ensure('gen/client')
+  ensure('gen/client/android')
+  ensure('gen/client/android/lib')
+  ensure('gen/client/android/src')
+  ensure('gen/client/android/src/'+packagePath)
+  ensure('gen/client/android/class')
+  ensure('gen/client/android/class/'+packagePath)
+
+  copy('../lib/android-json-rpc-0.3.3.jar', 'gen/client/android/lib/android-json-rpc-0.3.3.jar')
+
+  generate('gen/client/android/src/'+packagePath+'/'+capname+'Client.java', 'Client.java', {'appname': capname, 'package': package, 'actions': actionMethods, 'views': viewMethods})
+  shell('javac -d gen/client/android/class gen/client/android/src/'+packagePath+'/'+capname+'Client.java')
+  with pushd('gen/client/android/class'):
+    shell('jar cvf ../lib/'+appname+'.jar '+packagePath.split('/')[0])
+
+@task
+@needs(['server'])
 def deploy():
   sh('appcfg.py update gen/server')

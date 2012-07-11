@@ -9,15 +9,16 @@ from transform import applyAction
 from models import View
 
 class ActionService(JsonRpcService): #foreach($action in $actions)
-  def json_${action.name}($action.jargs): 
-    state=TransactionMonad()   
+  def json_${action.name}($action.jargs):
+    logging.info('ACTION: $action.name')
+    state=TransactionMonad()
     logging.error('state: '+str(state.transforms))
     self.${action.name}($action.cargs)
     applyAction(state.transforms)
     return None
-    
+
   def ${action.name}($action.fargs): #foreach($line in $action.code)
-    $line #end    
+    $line #end
 #end
 
 
@@ -34,6 +35,7 @@ def fetchView(name):
       logging.error('No data for view '+str(name))
 
 class ViewService(JsonRpcService): #foreach($view in $views)
-  def json_${view.name}(self): 
+  def json_${view.name}(self):
+    logging.info('VIEW: $view.name')
     return fetchView('$view.name')
 #end

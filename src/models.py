@@ -7,7 +7,7 @@ class View(db.Model):
 
 class CollectionModel(polymodel.PolyModel):
   pass
-  
+
 class BagModel(CollectionModel):
   pass
 
@@ -16,9 +16,9 @@ class ListModel(CollectionModel):
 
 class MapModel(CollectionModel):
   pass
-  
+
 class Value(polymodel.PolyModel):
-  pass
+  collection=db.ReferenceProperty(CollectionModel, required=True)
 
 class Item(polymodel.PolyModel):
   collection=db.ReferenceProperty(CollectionModel, required=True)
@@ -32,7 +32,7 @@ class MapItem(Item):
 
 class CollectionValue(Value):
   value=db.ReferenceProperty(CollectionModel, required=True)
-  
+
 class StringValue(Value):
   value=db.StringProperty(required=True)
 
