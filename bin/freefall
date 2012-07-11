@@ -1,0 +1,2 @@
+export PYTHONPATH=~/freefalldb/lib
+paver -f ~/freefalldb/pavement.py $*

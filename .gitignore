@@ -1,6 +1,5 @@
 freefalldb.sublime-project
 freefalldb.sublime-workspace
-bin/*
 test/*
 mconline/*
 .DS_Store
