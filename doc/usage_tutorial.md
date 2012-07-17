@@ -1,14 +1,17 @@
 Step 1 - Creating a new project
+===============================
 
 . ./setEnv.sh
 freefall new first_app
 cd first_app
 
 Step 2 - Defining your app
+===============================
 
 See the app tutorial for more information on this step.
 
 Step 3 - Generating and deploying server-side code
+===============================
 
 freefall server
 freefall deploy
@@ -18,6 +21,7 @@ or just:
 freefall deploy (automatically runs "freefall server" first)
 
 Step 4 - Generating client-side code
+===============================
 
 freefall py
 freefall android

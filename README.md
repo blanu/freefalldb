@@ -12,7 +12,7 @@ Usage
 * freefall deploy
 
 Command Reference
-==========
+=================
 * freefall new [appname] - create a new app skeleton
 * freefall compile - generate both client (for all languages) and server code
 * freefall server - generate server code

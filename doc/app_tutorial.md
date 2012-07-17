@@ -1,6 +1,7 @@
 This tutorial is going to walk you through creating a very simple leaderboard application in which clients can submit scores and you can get a sorted list of the scores.
 
 Step 1 - A new project
+===============================
 
 After you run "freefall new leaderboard", a directory called "leaderboard" will be created containing a skeleton for your project. The skeleton directory structure looks like this:
 
@@ -16,6 +17,7 @@ leaderboard/
             generic.py
 
 Step 2 - Configuring your app
+===============================
 
 The skeleton config.yaml file looks like this:
 
@@ -57,6 +59,7 @@ models:
 Most of the work of configuration is defining your actions, views, and models. These define the backend services which will be available to clients. Documentation on defining these is provided in further sections.
 
 Step 3 - Defining your models
+===============================
 
 The core of your database is its models. Models represent the state stored in the database. Everything else, such as actions, transforms, and views, modify models. The models are defined in the "models" section of your config.yaml file. Each model has a name and a type. The supported types are bag, map, and list. When you first access a model, it is automatically created if it does not already exist. Once it has been created, the type cannot be changed.
 
@@ -75,6 +78,7 @@ models:
   - type: list
 
 Step 4 - Defining your views
+===============================
 
 Views are part of the public API of your app. Views are read-only and are generated from models. They represent the output of your backend services. For instance, in a leaderboard service you might want a "sortedScores" service that gives you a sorted list of scores.
 
@@ -88,6 +92,7 @@ That's all you need to do to define a view. Creating views doesn't require writi
 Once you define a view, it will show up in the client API. For instance, if you were to run "freefall py" it would generate a file called "gen/client/py/sortedScores.py". If you were to run this program, it would display the JSON encoding of the contents of the sortedScores model. The Android code will also contain a method "sortedScores()" which you can call from an Android program to get the contents of the sortedScores model.
 
 Step 5 - Defining your actions
+===============================
 
 An action is part of the public API of your app which is available to clients. Actions allow the client to make changes to the models stored by the database. In MVC terminology, actions are controllers.
 
@@ -110,6 +115,7 @@ def report(id, score):
 Notice that the function is named the same as the name of the action. The arguments to the function can be named whatever you like, but there should be the same number of arguments as you specified in the config.yaml. All action functions also have access to a special variable called "state" which allows you to modify the database models. In this case we want to add the arguments to the bag called "unsortedScores". So we call state.add(). The first argument is the path to the model we want to modify. The second argument is the value we want to add to the database. The value should be a JSON-compatible value, so a string, float, dict with string keys and JSON-compatible values, or list with JSON-compatible values.
 
 Step 6 - Defining your transforms
+=================================
 
 A transform is not part of the public API of your app and is not available to clients. Transforms occur internally to your backend service. They are triggered by changes in models in the database and in turn create changes in other models. The changes propagate through a data flow graph with the changes originating in actions and ending in views.
 
@@ -148,6 +154,7 @@ As you can see, the function has the same name as the transform. The arguments c
 There are several imporant things to note here. First, the trigger inputs such as "unsortedScoreChanges" contain ONLY the changes that have just been made to the model, not the rest of the contents of the model. If you want access to the whole model, you need to add it as an input. Second, the input models are read-only while the output model is write-only. If you want to both read and write a model then you need to add the model as both an input and an output. Finally, while you can have multiple input models, you can only have one output model.
 
 Step 7 - Putting it all together
+================================
 
 Our finished config.yaml should look like this:
 
