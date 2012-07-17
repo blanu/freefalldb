@@ -52,7 +52,6 @@ def new(args):
 
   copy('examples/config.yaml', name+'/config/config.yaml')
   copy('src/generic.py', name+'/app/lib/generic.py')
-  copy('src/util.py', name+'/app/lib/util.py')
 
 def parseConfig():
   f=open('config/config.yaml')
