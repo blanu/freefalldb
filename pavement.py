@@ -45,9 +45,7 @@ def new(args):
     ensure('app')
     with pushd('app'):
       ensure('actions')
-      ensure('transformations')
-      ensure('models')
-      ensure('views')
+      ensure('transforms')
       ensure('lib')
 
   copy('examples/config.yaml', name+'/config/config.yaml')
