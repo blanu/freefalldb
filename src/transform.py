@@ -1,3 +1,5 @@
+""" The transform module provides methods to run transactional monads in App Engine transactions. """
+
 import logging
 
 from google.appengine.ext import db
@@ -10,12 +12,14 @@ from triggerInfo import triggers
 
 @db.transactional
 def addToBag(root, path, args):
+  """ addToBag adds the given args to the bag found at the specified path """
   logging.error('addToBag('+str(root)+','+str(path)+','+str(args)+')')
   set=Bag(root, root, path)
   set.add(args)
 
 @db.transactional
 def putInMap(root, path, args):
+  """ putInMap puts the values found in args with the keys found in args into the map found at the specified path """
   logging.error('putInMap('+str(root)+','+str(path)+','+str(args)+')')
   map=Map(root, root, path)
   for key in args:
@@ -24,24 +28,28 @@ def putInMap(root, path, args):
 
 @db.transactional
 def appendToList(root, path, args):
+  """ appendToList appends the given args to the list found at the given path """
   logging.error('appendToList('+str(root)+','+str(path)+','+str(args)+')')
   l=List(root, root, path)
   l.append(args)
 
 @db.transactional
 def removeFromList(root, path, args):
+  """ removeFromList removes the first instance (as determined by index) from the list found at the specified path """
   logging.error('removeFromList('+str(root)+','+str(path)+','+str(args)+')')
   l=List(root, root, path)
   l.remove(args)
 
 @db.transactional
 def insertIntoList(root, path, args):
+  """ insertIntoList inserts the value from the given args with the index from the given args into the list found at the specified path """
   logging.error('insertIntoList('+str(root)+','+str(path)+','+str(args)+')')
   l=List(root, root, path)
   l.insert(args['index'], args['value'])
 
 @db.transactional
 def clearList(root, path, args):
+  """ clearList clears such that it is empty the list found at the specified path """
   logging.error('clearList('+str(root)+','+str(path)+','+str(args)+')')
   l=List(root, root, path)
   l.clear()
@@ -56,12 +64,14 @@ enabledTransforms={
 }
 
 def getDirtyViews(transforms):
+  """ getDirtyViews examines the given list of transforms and returns a list of views which have been modified. """
   views=[]
   for transform in transforms:
     views.append(transform['path'])
   return views
 
 def processViews(rootKey, views):
+  """ processViews serializes the models contains in the views list and stores them in memcache. """
   logging.info('PROCESS VIEWS')
   root=db.get(rootKey)
   for view in views:
@@ -73,6 +83,7 @@ def processViews(rootKey, views):
     memcache.set(viewObj.name, viewObj.json)
 
 def triggerTransforms(root, transforms):
+  """ triggerTransforms iterates through the given transforms list, calling each transform function. """
   logging.error('triggerTransforms')
   paths={}
   for transform in transforms:
@@ -89,6 +100,7 @@ def triggerTransforms(root, transforms):
       f(paths[path])
 
 def applyTransforms(rootKey, transforms):
+  """ applyTransforms applies the given transforms in a transaction, triggers additional transforms, and processes dirty views. """
   logging.info('APPLY TRANSFORMS')
   root=db.get(rootKey)
   applyTransformsInTransaction(root, transforms)
@@ -100,12 +112,14 @@ def applyTransforms(rootKey, transforms):
 
 @db.transactional
 def applyTransformsInTransaction(root, transforms):
+  """ applyTransformsInTransaction applies the given transforms in a transaction. """
   logging.error('applyTransforms: '+str(transforms))
   for t in transforms:
     applyTransform(root, t)
 
 @db.transactional
 def applyTransform(root, transform):
+  """ applyTransform looks up the functions for the specified transforms and executes them. """
   type=transform['type']
   path=transform['path']
   args=transform['args']
@@ -114,6 +128,7 @@ def applyTransform(root, transform):
     f(root, path, args)
 
 def applyAction(transforms):
+  """ applyAction runs the given transforms in a deferred method. """
   logging.info('applyActions: '+str(transforms))
   root=fetchRoot()
   rootKey=root.key()

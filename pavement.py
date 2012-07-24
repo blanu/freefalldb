@@ -1,3 +1,10 @@
+"""
+This Paver configuration file enables command line access to Freefall tasks. You need Paver to be installed.
+Install Paver with 'pip install paver'.
+For help run:
+  . ./setEnv.sh
+  freefall help
+"""
 
 import os
 import shutil
@@ -49,7 +56,8 @@ def new(args):
       ensure('lib')
 
   copy('examples/config.yaml', name+'/config/config.yaml')
-  copy('src/generic.py', name+'/app/lib/generic.py')
+  copy('examples/testAction.py', name+'/app/actions/testAction.py')
+  copy('examples/copy.py', name+'/app/transforms/copy.py')
 
 def parseConfig():
   f=open('config/config.yaml')

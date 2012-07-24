@@ -1,3 +1,5 @@
+""" The storage module provides classes and utility methods for loading objects from the App Engine database. """
+
 import logging
 
 from models import *
@@ -5,6 +7,10 @@ from modelInfo import *
 from model import *
 
 def resolveInput(root, path):
+  """
+  resolveInput returns a CollectionInput of the proper type for the given path, looked up from the given root.
+  The type of the returned object is determined by the model types defined in config.yaml.
+  """
   name=path[0]
   if name in modelNames:
     if modelTypes[name]=='bag':
@@ -19,6 +25,10 @@ def resolveInput(root, path):
     logging.error('Unknown model '+str(name))
 
 def resolveModel(root, path):
+  """
+  resolveModel returns a Collection of the proper type for the given path, looked up from the given root.
+  The type of the returned object is determined by the model types defined in config.yaml.
+  """
   logging.info('resolveModel: '+str(path))
   name=path[0]
   if name in modelNames:
@@ -34,6 +44,10 @@ def resolveModel(root, path):
     logging.error('Unknown model '+str(name))
 
 def resolveOutput(root, path):
+  """
+  resolveOutput returns a TransactionMonad of the proper type for the given path, looked up from the given root.
+  The type of the returned object is determined by the model types defined in config.yaml.
+  """
   name=path[0]
   if name in modelNames:
     if modelTypes[name]=='bag':
@@ -48,7 +62,12 @@ def resolveOutput(root, path):
     logging.error('Unknown model '+str(name))
 
 class CollectionInput:
+  """
+  CollectionInput is the base class for the different types of input classes.
+  Each CollectionInput class provides read-only methods for accessing models.
+  """
   def __init__(self, root, container, path, entity=None):
+    """ Set the root, container, and path properties. If entity is included, use it, otherwise look up the path using the given root to find the entity. """
     self.root=root
     self.container=container
 
@@ -65,13 +84,20 @@ class CollectionInput:
         self.entity=item.value.value
 
 class BagInput(CollectionInput):
+  """ BagInput is the CollectionInput class for providing read-only access to bag models. """
   pass
 
 class MapInput(CollectionInput):
+  """
+  MapInput is the CollectionInput class for providing read-only access to map models.
+  It allows for getting a value from a map given a key.
+  """
   def get(self, key):
+    """ Get the value from a map model given the key. """
     return self[key]
 
   def __getitem__(self, index):
+    """ Get the value from a map model given the key. """
     value=MapItem.all().ancestor(self.root).filter("collection =", self.entity).filter("index =", index).get()
     if value:
       logging.error('Collection found??? '+str(type(value.value)))
@@ -92,7 +118,9 @@ class MapInput(CollectionInput):
       return None
 
 class ListInput(CollectionInput):
+  """ ListInput is the CollectionInput class for providing read-only access to list models. """
   def __getitem__(self, index):
+    """ Get the value from a list given the index. """
     value=ListItem.all().ancestor(self.root).filter("collection =", self.entity).filter("index =", index).get()
     if value:
       logging.error('Collection found??? '+str(type(value.value)))
@@ -113,6 +141,7 @@ class ListInput(CollectionInput):
       return None
 
   def __len__(self):
+    """ Return the length of the list. """
     try:
       return int(ListItem.all().ancestor(self.root).filter("collection =", self.entity).count())
     except Exception, e:
@@ -120,6 +149,7 @@ class ListInput(CollectionInput):
       return 0
 
   def tuples(self):
+    """ Return a python list where each item in the list is a tuple (index,value) containing the index of the list position and the value at that position, in the same order as the referenced list model. """
     results=[]
     logging.info('tuples root: '+str(self.root))
     logging.info('tuples coll: '+str(self.container))
@@ -130,12 +160,17 @@ class ListInput(CollectionInput):
     return results
 
 class Collection:
+  """ Collection is the base class for the classes which provide direct access to modify database models. """
   root=None
   container=None
   path=None
   entity=None
 
   def __init__(self, root, container, path):
+    """
+    Set the root, container, and path properties. If entity is included, use it, otherwise look up the path using the given root to find the entity.
+    If an object does not exist at the given path, create it using the type information provided in the models section of config.yaml.
+    """
     self.root=root
     self.container=container
 
@@ -180,6 +215,7 @@ class Collection:
           logging.error('Unknown collection type: '+str(modelTypes[name]))
 
   def makeValue(self, root, container, value):
+    """ Create and store in the database an object representing the given value, of a compatible type with the type of value and contained in the given container. """
     logging.error('makeValue('+str(type(value))+':'+str(value)+')')
     if type(value)==str:
       obj=StringValue(parent=root, collection=container, value=value)
@@ -234,9 +270,11 @@ class Collection:
     return c
 
   def serialize(self):
+    """ Serialize this collection to JSON. """
     return self.serializeValue(self.entity)
 
   def serializeValue(self, value):
+    """ Serialize the given value to JSON. """
     if type(value)==BagModel:
       s='['
       count=Item.all().ancestor(self.root).filter('collection =', value).count()
@@ -276,7 +314,9 @@ class Collection:
     return s
 
 class Bag(Collection):
+  """ Bag provides direct access to modify bag type models in the database. """
   def add(self, value):
+    """ Add the given value to the bag with the stored path. """
     valueObj=self.makeValue(self.root, self.entity, value)
     if valueObj:
       logging.error('entity: '+str(self.entity))
@@ -284,7 +324,9 @@ class Bag(Collection):
       item.put()
 
 class Map(Collection):
+  """ Map provides direct access to modify map type models in the database. """
   def put(self, key, value):
+    """ Put the given value with the specified key into the map model found at the stored path. """
     logging.error('map.put: '+str(key)+':'+str(value))
     valueObj=self.makeValue(self.root, self.entity, value)
     if valueObj:
@@ -302,8 +344,10 @@ class Map(Collection):
       item.put()
 
 class List(Collection):
+  """ List provides direct access to modify list type models in the database. """
   # FIXME - this is broken in the new list implementation
   def append(self, value):
+    """ Append the given value to the list model found at the stored path. """
     valueObj=self.makeValue(self.root, self.entity, value)
     key=ListItem.all().ancestor(self.root).filter("collection =", self.entity).count()
     if valueObj:
@@ -317,6 +361,7 @@ class List(Collection):
       item.put()
 
   def remove(self, value):
+    """ Remove the first instance (by index) of the given value from the list found at the stored path. """
     if type(value)==str or type(value)==unicode:
       valueObj=StringValue.all().ancestor(self.root).filter('collection =', self.entity).filter('value =', value).get()
       if not valueObj:
@@ -333,6 +378,7 @@ class List(Collection):
       logging.error('Unsupported remove type: '+str(type(value)))
 
   def insert(self, key, value):
+    """ Insert the value with the given key into the list model found at the stored path. """
     logging.error('insert: '+str(key)+' '+str(value))
     valueObj=self.makeValue(self.root, self.entity, value)
     if valueObj:
@@ -346,10 +392,10 @@ class List(Collection):
       item.put()
 
   def clear(self):
+    """ Clear such that it is empty the list found at the stored path. """
     logging.error('clear')
     items=ListItem.all().ancestor(self.root).filter("collection =", self.entity).run()
     for item in items:
       # FIXME - Recursive delete necessary for collections
       item.value.delete()
       item.delete()
-

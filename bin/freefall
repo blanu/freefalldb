@@ -1,2 +1,6 @@
+#!/bin/sh
+
+# This script provides a convenient wrapper for the Paver tasks defined in pavement.py
+
 export PYTHONPATH=~/freefalldb/lib
 paver -f ~/freefalldb/pavement.py $*
