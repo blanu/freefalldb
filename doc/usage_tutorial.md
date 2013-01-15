@@ -1,3 +1,5 @@
+This is a tutorial on usage of the command line interface to Freefall tasks.
+
 Step 1 - Creating a new project
 ===============================
 

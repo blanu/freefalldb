@@ -65,12 +65,16 @@ def parseConfig():
   f.close()
   data=yaml.load(s)
   appname=data['appname']
+  if 'service' in data:
+    service=data['service']
+  else:
+    service=appname
   capname=appname.capitalize()
   version=data['version']
   package=data['package']
   packagePath=package.replace('.', '/')
 
-  generate('gen/server/app.yaml', 'app.yaml', {'appname': appname, 'version': version})
+  generate('gen/server/app.yaml', 'app.yaml', {'appname': service, 'version': version})
 
   actions=data['actions']
   transforms=data['transforms']
@@ -80,6 +84,13 @@ def parseConfig():
 
   actionMethods=[]
   for action in actions:
+    actionValues=actions[action]
+    parameters=actionValues['parameters']
+    try:
+      inputs=actionValues['inputs']
+    except:
+      inputs=[]
+    outputs=actionValues['outputs']
     f=open('app/actions/'+action+'.py')
     data=f.read()
     f.close()
@@ -88,39 +99,44 @@ def parseConfig():
     args=[arg.strip() for arg in firstLine.split('(')[1].split(')')[0].split(',')]
     while len(args)>0 and args[-1]=='':
       args=args[:-1]
-    if len(args)==0:
-      jargs='self'
-      fargs='self, state'
-      cargs='state'
-    else:
-      jargs=', '.join(['self']+args)
-      fargs=', '.join(['self', 'state']+args)
-      cargs=', '.join(['state']+args)
+    argList=args[:len(parameters)]
+    jargs=', '.join(['self']+args[:len(parameters)])
+    fargs=', '.join(['self']+args)
+    cargs=', '.join(args)
 
     targs=[]
-    for x in range(len(args)):
+    itargs=[]
+    for x in range(min(len(args),len(parameters))):
       arg=args[x]
-      argType=actions[action][x]
+      argType=parameters[x]
       if argType=='string':
         targs.append('String '+arg)
+        itargs.append(arg+':(NSString *)'+arg)
       elif argType=='float':
         targs.append('Float '+arg)
+        itargs.append(arg+':(NSNumber *)'+arg)
       elif argType=='map':
         targs.append('Map '+arg)
+        itargs.append(arg+':(NSDictionary *)'+arg)
       elif argType=='list':
         targs.append('List '+arg)
+        itargs.append(arg+':(NSArray *)'+arg)
       else:
         print('Unknown targs type: '+str(type(arg)))
     targs=', '.join(targs)
+    itargs[0]=itargs[0].split(':')[1]
+    itargs=' '.join(itargs)
     args=', '.join(args)
 
     body=[line.strip() for line in data.split("\n")[1:]]
     while body[-1]=='':
       body=body[:-1]
-    actionMethods.append({'name':name, 'jargs':jargs, 'fargs':fargs, 'cargs':cargs, 'targs':targs, 'args':args, 'code':body})
+    actionMethods.append({'name':name, 'jargs':jargs, 'fargs':fargs, 'cargs':cargs, 'targs':targs, 'args':args, 'code':body, 'inputs': inputs, 'outputs': outputs, 'signature': itargs, 'argList': argList})
 
   triggers=[]
   transformMethods=[]
+  if not transforms:
+    transforms=[]
   for transform in transforms:
     transformValues=transforms[transform]
     for trigger in transformValues['triggers']:
@@ -151,7 +167,7 @@ def parseConfig():
   for view in views:
     viewMethods.append({'name':view})
 
-  return appname, capname, version, package, packagePath, actions, models, triggers, views, actionMethods, transformMethods, viewMethods
+  return appname, service, capname, version, package, packagePath, actions, models, triggers, views, actionMethods, transformMethods, viewMethods
 
 @task
 def compile():
@@ -175,12 +191,16 @@ def server():
   copy('../src/storage.py', 'gen/server/storage.py')
   copy('../src/models.py', 'gen/server/models.py')
   copy('../templates/web.py', 'gen/server/web.py')
+  copy('../src/generic.py', 'gen/server/generic.py')
+  copy('../src/packRpcHandler.py', 'gen/server/packRpcHandler.py')
+  copy('../lib/bson/', 'gen/server/bson')
+#  copy('../lib/pytz/', 'gen/server/pytz')
 
   files=os.listdir('app/lib')
   for filename in files:
     copy('app/lib/'+filename, 'gen/server/'+filename)
 
-  appname, capname, version, package, packagePath, actions, models, triggers, views, actionMethods, transformMethods, viewMethods=parseConfig()
+  appname, service, capname, version, package, packagePath, actions, models, triggers, views, actionMethods, transformMethods, viewMethods=parseConfig()
 
   generate('gen/server/api.py', 'api.py', {'actions': actionMethods, 'views': viewMethods})
   generate('gen/server/transforms.py', 'transforms.py', {'transforms': transformMethods})
@@ -191,25 +211,35 @@ def server():
 def client():
   call_task('py')
   call_task('android')
+  call_task('ios')
 
 @task
 def py():
   if not os.path.exists('config/config.yaml'):
     return
 
-  appname, capname, version, package, packagePath, actions, models, triggers, views, actionMethods, transformMethods, viewMethods=parseConfig()
+  appname, service, capname, version, package, packagePath, actions, models, triggers, views, actionMethods, transformMethods, viewMethods=parseConfig()
+
+  print ('service: '+str(service))
 
   ensure('gen')
   ensure('gen/client')
   ensure('gen/client/py')
   ensure('gen/client/py/lib')
+  ensure('gen/client/py/lib/bson')
 
   copy('../lib/jsonrpc', 'gen/client/py/lib/jsonrpc')
+  copy('../src/packProxy.py', 'gen/client/py/lib/packProxy.py')
+  copy('../lib/bson/__init__.py', 'gen/client/py/lib/bson/__init__.py')
+  copy('../lib/bson/network.py', 'gen/client/py/lib/bson/network.py')
+  copy('../lib/bson/codec.py', 'gen/client/py/lib/bson/codec.py')
 
   for action in actions:
-    generate('gen/client/py/'+action+'.py', 'client.py', {'appname': appname, 'service': 'actions', 'method': action, 'types': dumps(actions[action])})
+    generate('gen/client/py/'+action+'.py', 'client.py', {'appname': appname, 'host': service, 'service': 'actions', 'method': action, 'types': dumps(actions[action]['parameters'])})
+    generate('gen/client/py/'+action+'-pack.py', 'client-pack.py', {'appname': appname, 'host': service, 'service': 'actions', 'method': action, 'types': dumps(actions[action]['parameters'])})
   for view in views:
-    generate('gen/client/py/'+view+'.py', 'client.py', {'appname': appname, 'service': 'views', 'method': view})
+    generate('gen/client/py/'+view+'.py', 'client.py', {'appname': appname, 'host': service, 'service': 'views', 'method': view})
+    generate('gen/client/py/'+view+'-pack.py', 'client-pack.py', {'appname': appname, 'host': service, 'service': 'views', 'method': view})
 
 def shell(cmd):
   print('Executing '+str(cmd))
@@ -220,7 +250,7 @@ def android():
   if not os.path.exists('config/config.yaml'):
     return
 
-  appname, capname, version, package, packagePath, actions, models, triggers, views, actionMethods, transformMethods, viewMethods=parseConfig()
+  appname, service, capname, version, package, packagePath, actions, models, triggers, views, actionMethods, transformMethods, viewMethods=parseConfig()
 
   ensure('gen')
   ensure('gen/client')
@@ -237,6 +267,26 @@ def android():
   shell('javac -d gen/client/android/class gen/client/android/src/'+packagePath+'/'+capname+'Client.java')
   with pushd('gen/client/android/class'):
     shell('jar cvf ../lib/'+appname+'.jar '+packagePath.split('/')[0])
+
+@task
+def ios():
+  if not os.path.exists('config/config.yaml'):
+    return
+
+  appname, service, capname, version, package, packagePath, actions, models, triggers, views, actionMethods, transformMethods, viewMethods=parseConfig()
+
+  ensure('gen')
+  ensure('gen/client')
+  ensure('gen/client/ios')
+  ensure('gen/client/ios/lib')
+  ensure('gen/client/ios/src')
+
+  copy('../lib/DSJSONRPC', 'gen/client/ios/lib/DSJSONRPC')
+  copy('../lib/msgpack-objectivec', 'gen/client/ios/lib/msgpack-objectivec')
+  copy('../lib/PackRPC', 'gen/client/ios/lib/PackRPC')
+
+  generate('gen/client/ios/src/'+capname+'Client.h', 'Client.h', {'appname': capname, 'host': service, 'package': package, 'actions': actionMethods, 'views': viewMethods})
+  generate('gen/client/ios/src/'+capname+'Client.m', 'Client.m', {'appname': capname, 'host': service, 'package': package, 'actions': actionMethods, 'views': viewMethods})
 
 @task
 @needs(['server'])

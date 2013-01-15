@@ -21,7 +21,7 @@ def addToBag(root, path, args):
 def putInMap(root, path, args):
   """ putInMap puts the values found in args with the keys found in args into the map found at the specified path """
   logging.error('putInMap('+str(root)+','+str(path)+','+str(args)+')')
-  map=Map(root, root, path)
+  map=resolveModel(root, path)
   for key in args:
     value=args[key]
     map.put(key, value)
@@ -30,7 +30,8 @@ def putInMap(root, path, args):
 def appendToList(root, path, args):
   """ appendToList appends the given args to the list found at the given path """
   logging.error('appendToList('+str(root)+','+str(path)+','+str(args)+')')
-  l=List(root, root, path)
+  l=resolveModel(root, path)
+  logging.error('l: '+str(l)+' '+str(l.entity))
   l.append(args)
 
 @db.transactional
@@ -75,12 +76,15 @@ def processViews(rootKey, views):
   logging.info('PROCESS VIEWS')
   root=db.get(rootKey)
   for view in views:
-    obj=resolveModel(root, view)
-    logging.error('processing view:')
-    logging.error(obj.serialize())
-    viewObj=View(name=view[0], json=obj.serialize())
-    viewObj.put()
-    memcache.set(viewObj.name, viewObj.json)
+    if len(view)==1:
+      obj=resolveModel(root, view)
+      logging.error('processing view')
+
+      viewObj=View(name=view[0], json=obj.serialize())
+      viewObj.put()
+      memcache.set(viewObj.name, viewObj.json)
+
+      memcache.delete(view[0]+'.bson')
 
 def triggerTransforms(root, transforms):
   """ triggerTransforms iterates through the given transforms list, calling each transform function. """
@@ -124,6 +128,7 @@ def applyTransform(root, transform):
   path=transform['path']
   args=transform['args']
   f=enabledTransforms[type]
+  logging.error('applyTransform %s,%s,%s,%s' % (type, path, args, f))
   if f!=None:
     f(root, path, args)
 

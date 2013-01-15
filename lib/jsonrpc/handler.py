@@ -3,15 +3,7 @@ JSON-RPC module, written to be used with GAE.
 
 tyrion-mx @ chat.freenode.net
 """
-## You can use simplejson, that is bundled with django, instead of jsonparser.
-try:
-  from django.utils import simplejson as parser
-  ## for simplejson uncomment this:
-  JSONParseError = ValueError
-  JSONParseError = parser.JSONDecodeException
-except:
-#  import jsonparser as parser
-  import json as parser
+import json as parser
 
 class JSONRPCError(Exception):
     """
@@ -56,7 +48,7 @@ class JSONRPC(object):
         id = 0
         try:
             methodName, params, id = self._decodeRequest(data)
-            
+
             try:
                 method = getattr(self, 'json_%s' % methodName)
             except AttributeError:
@@ -74,7 +66,7 @@ class JSONRPC(object):
                      'message': e.message,
                      'code': e.code}
             httpStatus = e.httpStatus
-        
+
         return self._encodeResponse(result, error, id), httpStatus
 
     def _decodeRequest(self, data):

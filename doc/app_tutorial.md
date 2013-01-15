@@ -1,4 +1,4 @@
-This tutorial is going to walk you through creating a very simple leaderboard application in which clients can submit scores and you can get a sorted list of the scores.
+In this tutorial we will build a simple Freefall application. It will be a simple leaderboard where you can post scores for usernames and then get a list of the usernames sorted by score.
 
 Step 1 - A new project
 ===============================

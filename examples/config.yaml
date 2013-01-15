@@ -3,7 +3,10 @@ package: com.example
 version: 1
 actions:
   testAction:
-  - string
+    parameters:
+      - string
+    outputs:
+      - testModel
 transforms:
   copy:
     triggers:

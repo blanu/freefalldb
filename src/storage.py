@@ -1,10 +1,19 @@
 """ The storage module provides classes and utility methods for loading objects from the App Engine database. """
 
 import logging
+import base64
 
 from models import *
 from modelInfo import *
 from model import *
+
+from jsonrpc import loads, dumps
+import bson
+
+from google.appengine.ext import ndb
+
+def encode(s):
+  return base64.b64encode(s).decode('ascii')
 
 def resolveInput(root, path):
   """
@@ -14,15 +23,23 @@ def resolveInput(root, path):
   name=path[0]
   if name in modelNames:
     if modelTypes[name]=='bag':
-      return BagInput(root, root, path)
+      rootObj=BagInput(root, root, path)
     elif modelTypes[name]=='map':
-      return MapInput(root, root, path)
+      rootObj=MapInput(root, root, path)
     elif modelTypes[name]=='list':
-      return ListInput(root, root, path)
+      rootObj=ListInput(root, root, path)
     else:
       logging.error('Unknown resolve type '+str(modelTypes[name]))
   else:
     logging.error('Unknown model '+str(name))
+
+  if len(path)==1:
+    return rootObj
+  else:
+    obj=rootObj
+    for part in path[1:]:
+      obj=obj[part]
+    return obj
 
 def resolveModel(root, path):
   """
@@ -33,33 +50,58 @@ def resolveModel(root, path):
   name=path[0]
   if name in modelNames:
     if modelTypes[name]=='bag':
-      return Bag(root, root, path)
+      rootObj=Bag(root, root, [name])
     elif modelTypes[name]=='map':
-      return Map(root, root, path)
+      rootObj=Map(root, root, [name])
     elif modelTypes[name]=='list':
-      return List(root, root, path)
+      rootObj=List(root, root, [name])
     else:
       logging.error('Unknown resolve type '+str(modelTypes[name]))
+      return None
   else:
     logging.error('Unknown model '+str(name))
+    return None
 
-def resolveOutput(root, path):
+  if len(path)==1:
+    logging.error('simple model '+str(rootObj))
+    return rootObj
+  else:
+    logging.error('complex model '+str(rootObj))
+    obj=rootObj
+    for part in path[1:]:
+      obj=obj[part]
+      if not obj:
+        return None
+    logging.error('returning '+str(obj))
+    return obj
+
+def resolveOutput(root, path, state):
   """
   resolveOutput returns a TransactionMonad of the proper type for the given path, looked up from the given root.
   The type of the returned object is determined by the model types defined in config.yaml.
   """
   name=path[0]
+  logging.error('name:'+str(name))
+  logging.error('modelNames:'+str(modelNames))
   if name in modelNames:
     if modelTypes[name]=='bag':
-      return BagTransaction(path)
+      rootObj=BagTransaction(path, transforms=state.transforms)
     elif modelTypes[name]=='map':
-      return MapTransaction(path)
+      rootObj=MapTransaction(path, transforms=state.transforms)
     elif modelTypes[name]=='list':
-      return ListTransaction(path)
+      rootObj=ListTransaction(path, transforms=state.transforms)
     else:
       logging.error('Unknown resolve type '+str(modelTypes[name]))
   else:
     logging.error('Unknown model '+str(name))
+
+  if len(path)==1:
+    return rootObj
+  else:
+    obj=rootObj
+    for part in path[1:]:
+      obj=obj[part]
+    return obj
 
 class CollectionInput:
   """
@@ -113,7 +155,7 @@ class MapInput(CollectionInput):
           logging.error('Unknown collection value type: '+str(type(value.value.value)))
           return value.value.value
       else:
-        return value.value
+        return value.value.value
     else:
       return None
 
@@ -177,6 +219,8 @@ class Collection:
     self.path=path
     name=path[0]
 
+    logging.error('Collection.__init__('+str(root)+','+str(container)+','+str(path)+')')
+
     item=MapItem.all().ancestor(self.root).filter("collection =", self.container).filter('index =', name).get()
     logging.error('item: '+str(item))
     if item:
@@ -198,10 +242,15 @@ class Collection:
           map.put()
           val=CollectionValue(parent=root, collection=self.container, value=map)
           val.put()
+
+          logging.error('!!!!')
           item=MapItem(parent=self.root, collection=self.container, index=name, value=val)
-          item.put()
+          key=item.put()
+          logging.error('new map: '+str(path)+' '+str(key))
+          logging.error('params: '+str(self.root)+' '+str(self.container)+' '+name)
+          logging.error('????')
+
           self.entity=map
-          logging.error('new map: '+str(self.entity))
         elif modelTypes[name]=='list':
           l=ListModel(parent=self.root)
           l.put()
@@ -213,12 +262,16 @@ class Collection:
           logging.error('new list: '+str(self.entity))
         else:
           logging.error('Unknown collection type: '+str(modelTypes[name]))
+          return
+      else:
+        logging.error('No model with that name '+str(name))
+        return
 
   def makeValue(self, root, container, value):
     """ Create and store in the database an object representing the given value, of a compatible type with the type of value and contained in the given container. """
     logging.error('makeValue('+str(type(value))+':'+str(value)+')')
     if type(value)==str:
-      obj=StringValue(parent=root, collection=container, value=value)
+      obj=DataValue(parent=root, collection=container, value=value)
       obj.put()
       return obj
     elif type(value)==unicode:
@@ -275,43 +328,59 @@ class Collection:
 
   def serializeValue(self, value):
     """ Serialize the given value to JSON. """
+    objects=self.makeObject(value)
+    return dumps(objects)
+
+  def bsonSerialize(self):
+    """ Serialize this collection to JSON. """
+    return self.bsonSerializeValue(self.entity)
+
+  def bsonSerializeValue(self, value):
+    """ Serialize the given value to JSON. """
+    objects=self.makeObject(value, b64encode=False)
+    return bson.dumps({'result': objects})
+
+  def makeObject(self, value, b64encode=True):
+    objects=None
     if type(value)==BagModel:
-      s='['
+      objects=[]
       count=Item.all().ancestor(self.root).filter('collection =', value).count()
       if count>0:
         items=Item.all().ancestor(self.root).filter('collection =', value).run()
         for item in items:
-          s=s+self.serializeValue(item.value)+','
-        s=s[:-1]
-      s=s+']'
+          try:
+            objects.append(self.makeObject(item.value, b64encode=b64encode))
+          except:
+            logging.error('Failed to serialize value due to exception')
     elif type(value)==ListModel:
-      s='['
+      objects=[]
       count=ListItem.all().ancestor(self.root).filter('collection =', value).order('index').count()
       if count>0:
         items=ListItem.all().ancestor(self.root).filter('collection =', value).order('index').run()
         for item in items:
-          s=s+self.serializeValue(item.value)+','
-        s=s[:-1]
-      s=s+']'
+          objects.append(self.makeObject(item.value, b64encode=b64encode))
     elif type(value)==MapModel:
-      s='{'
+      objects={}
       count=MapItem.all().ancestor(self.root).filter('collection =', value).count()
       if count>0:
         items=MapItem.all().ancestor(self.root).filter('collection =', value).run()
         for item in items:
-          s=s+'"'+str(item.index)+'"'+':'+self.serializeValue(item.value)+','
-        s=s[:-1]
-      s=s+'}'
+          objects[str(item.index)]=self.makeObject(item.value, b64encode=b64encode)
     elif type(value)==StringValue:
-      s='"'+str(value.value)+'"'
+      objects=unicode(value.value)
+    elif type(value)==DataValue:
+      if b64encode:
+        objects=encode(str(value.value))
+      else:
+        objects=str(value.value)
     elif type(value)==FloatValue:
-      s=str(value.value)
+      objects=float(value.value)
     elif type(value)==CollectionValue:
-      s=self.serializeValue(value.value)
+      objects=self.makeObject(value.value, b64encode=b64encode)
     else:
       print('Unknown serialize type: '+str(type(value)))
-      return ''
-    return s
+      objects=null
+    return objects
 
 class Bag(Collection):
   """ Bag provides direct access to modify bag type models in the database. """
@@ -342,6 +411,26 @@ class Map(Collection):
       else:
         item=MapItem(parent=self.root, collection=self.entity, index=str(key), value=valueObj)
       item.put()
+
+  def __getitem__(self, key):
+    item=MapItem.all().ancestor(self.root).filter("collection =", self.entity).filter('index =', str(key)).get()
+    if item:
+      if type(item.value)==CollectionValue:
+        if type(item.value.value)==BagModel:
+          return Bag(self.root, self.entity, [key])
+        elif type(item.value.value)==ListModel:
+          return List(self.root, self.entity, [key])
+        elif type(item.value.value)==MapModel:
+          return Map(self.root, self.entity, [key])
+        else:
+          logging.error('Unknown value '+str(type(item.value.value)))
+          return None
+      else:
+        logging.error('Not a collection')
+        return None
+    else:
+      logging.error('Nothing with that key '+str(self.path)+' '+str(key))
+      return None
 
 class List(Collection):
   """ List provides direct access to modify list type models in the database. """

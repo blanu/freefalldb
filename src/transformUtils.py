@@ -32,7 +32,8 @@ def loadModel(name):
   root=fetchRoot()
   return resolveModel(root, [name])
 
-def loadOutput(name):
+def loadOutput(name, state):
   """ loadInput returns a TransactionMonad instance of the proper type for the model with the specified name. """
+  logging.error('load output: '+str(state))
   root=fetchRoot()
-  return resolveOutput(root, [name])
+  return resolveOutput(root, [name], state)

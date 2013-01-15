@@ -8,6 +8,11 @@ class View(db.Model):
   name=db.StringProperty(required=True)
   json=db.TextProperty(required=True)
 
+class BSONView(db.Model):
+  """ View represents a Freefall view. It contains a name which can be used to look it up and a pre-serialized BSON-encoded representation of the view. """
+  name=db.StringProperty(required=True)
+  bson=db.BlobProperty(required=True)
+
 class CollectionModel(polymodel.PolyModel):
   """ CollectionModel is the base class for all collections. It has no properties and is mainly used as a base type, while the specific types are used for queries. """
   pass
@@ -47,7 +52,11 @@ class CollectionValue(Value):
 
 class StringValue(Value):
   """ StringValue represents a string type value. It has a 'value' property which stores the string. """
-  value=db.StringProperty(required=True)
+  value=db.StringProperty(required=True, multiline=True)
+
+class DataValue(Value):
+  """ DataValue represents a bytestring type value. It has a 'value' property which stores the bytestring. """
+  value=db.BlobProperty(required=True)
 
 class FloatValue(Value):
   """ FloatValue represents a float type value. It has a 'value' property which stores the float. """

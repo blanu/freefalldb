@@ -24,7 +24,7 @@ for x in range(len(args)):
   args[x]=convert(args[x], types[x])
 #end
 
-#remote=ServiceProxy('http://${appname}.appspot.com/${service}')
+#remote=ServiceProxy('http://${host}.appspot.com/${service}')
 remote=ServiceProxy('http://localhost:8080/${service}')
 
 if len(args)==0:
