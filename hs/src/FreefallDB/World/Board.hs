@@ -47,8 +47,8 @@ $(deriveSafeCopy 0 'base ''Board)
 newBoard :: ByteString -> Board
 newBoard n = Board n 0 [] M.empty []
 
-newThread :: (ByteString, ByteString) -> UTCTime -> Update Board ()
-newThread (t, b) now = do
+addThread :: (ByteString, ByteString) -> UTCTime -> Update Board ()
+addThread (t, b) now = do
   board <- get
   let postid = (lastid board) + 1
   let post = Post postid now t b []
@@ -63,4 +63,13 @@ getThreads = do
   board <- ask
   return (threads board)
 
-$(makeAcidic ''Galaxy ['newThread, 'getThreads])
+$(makeAcidic ''Galaxy ['addThread, 'getThreads])
+
+makeThread :: Board -> (ByteString, ByteString) -> IO()
+makeThread board (t, b) = do
+  now <- getCurrentTime
+  update board (newThread (t, b) now)
+  return ()
+threads :: Board -> IO [Integer]
+threads board = return $ query board getThreads
+

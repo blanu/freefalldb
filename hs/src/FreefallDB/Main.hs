@@ -6,12 +6,14 @@ module FreefallDB.Main
 ) where
 
 import Network.Socket
-import Network.Socket.ByteString.Lazy (sendAll)
+import Network.Socket.ByteString.Lazy (sendAll, getContents)
+import Data.Serialize
 import Control.Monad (forever, guard)
 import Control.Exception (tryJust)
 import System.IO.Error (isEOFError)
 import Data.Acid
 import qualified Data.Map as M
+import Network.MessagePackRpc.Server
 
 import FreefallDB.Network.TcpServer
 import FreefallDB.Network.Commands
@@ -22,19 +24,10 @@ main = do
   let host = "0.0.0.0"
   let port = 5847
 
-  galaxy <- openLocalStateFrom "boards/test/" (newBoard "test")
+  board <- openLocalStateFrom "boards/test/" (newBoard "test")
 
-  server host port galaxy process
+  serve port [
+    ("makeThread", prep makeThread)
+   ]
 
-process :: Galaxy -> Socket -> IO()
-process galaxy sock = do
-  putStrLn "Reading byte"
-  eitherCommand <- tryJust (guard . isEOFError) $ recv sock 1
-  case eitherCommand of
-    Left _             -> do
-      putStrLn "EOF"
-      return ()
-    Right (command:[]) -> do
-      putStrLn "Read byte"
-      processCommand command galaxy sock
-      process galaxy sock -- recurse
+prep f = fun $ f board

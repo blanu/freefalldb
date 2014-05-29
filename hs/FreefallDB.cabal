@@ -1,4 +1,4 @@
-name: FreefallDB
+name: SpacePartyServer
 version: 0.0.1
 cabal-version: >=1.2
 build-type: Simple
@@ -20,7 +20,7 @@ executable freefalldb
       safecopy,
       acid-state,
       mtl,
-      time
+      msgpack-rpc
     main-is: FreefallDB/Main.hs
     buildable: True
     hs-source-dirs: src
