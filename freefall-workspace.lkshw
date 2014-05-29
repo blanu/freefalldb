@@ -1,0 +1,10 @@
+Version of workspace file format:
+               1
+Time of storage:
+               "Sun Dec 15 12:03:12 Central Standard Time 2013"
+Name of the workspace:
+               "freefall-workspace"
+File paths of contained packages:
+               ["hs\\FreefallDB.cabal"]
+Maybe file path of an active package:
+               Just "hs\\FreefallDB.cabal"

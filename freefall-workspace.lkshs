@@ -1,0 +1,18 @@
+Version of session file format:
+               1
+Time of storage:
+               "Fri Jan 10 23:37:16 Central Standard Time 2014"
+Layout:        VerticalP (TerminalP {paneGroups = fromList [], paneTabs = Just TopP, currentPage = 0, detachedId = Nothing, detachedSize = Nothing}) (HorizontalP (TerminalP {paneGroups = fromList [("Browser",HorizontalP (TerminalP {paneGroups = fromList [], paneTabs = Nothing, currentPage = 0, detachedId = Nothing, detachedSize = Nothing}) (HorizontalP (TerminalP {paneGroups = fromList [], paneTabs = Nothing, currentPage = 0, detachedId = Nothing, detachedSize = Nothing}) (TerminalP {paneGroups = fromList [], paneTabs = Nothing, currentPage = 0, detachedId = Nothing, detachedSize = Nothing}) 201) 138)], paneTabs = Just BottomP, currentPage = 0, detachedId = Nothing, detachedSize = Nothing}) (TerminalP {paneGroups = fromList [], paneTabs = Nothing, currentPage = 0, detachedId = Nothing, detachedSize = Nothing}) 500) 689
+Population:    [(Just (ErrorsSt ErrorsState),[SplitP RightP,SplitP TopP]),(Just (FilesSt FilesState),[SplitP RightP,SplitP TopP]),(Just (InfoSt (InfoState Nothing)),[SplitP RightP,SplitP TopP,GroupP "Browser",SplitP BottomP,SplitP BottomP]),(Just (LogSt LogState),[SplitP RightP,SplitP BottomP]),(Just (BufferSt (BufferState "C:\\Users\\Brandon\\Documents\\GitHub\\freefalldb\\hs\\src\\Main.hs" 0)),[SplitP LeftP]),(Just (ModulesSt (ModulesState 286 (SystemScope,False) (Nothing,Nothing) (ExpanderState {packageExp = ([],[]), packageExpNoBlack = ([],[]), packageDExp = ([],[]), packageDExpNoBlack = ([],[]), workspaceExp = ([],[]), workspaceExpNoBlack = ([],[]), workspaceDExp = ([],[]), workspaceDExpNoBlack = ([],[]), systemExp = ([],[]), systemExpNoBlack = ([],[])}))),[SplitP RightP,SplitP TopP,GroupP "Browser",SplitP BottomP,SplitP TopP]),(Just (WorkspaceSt WorkspaceState),[SplitP RightP,SplitP TopP,GroupP "Browser",SplitP TopP]),(Just (BufferSt (BufferState "C:\\Users\\Brandon\\Documents\\GitHub\\freefalldb\\examples\\config.yaml" 0)),[SplitP LeftP]),(Just (BufferSt (BufferState "C:\\Users\\Brandon\\Documents\\GitHub\\freefalldb\\pavement.py" 0)),[SplitP LeftP])]
+Window size:   (1276,931)
+Completion size:
+               (750,400)
+Workspace:     Just "C:\\Users\\Brandon\\Documents\\GitHub\\freefalldb\\freefall-workspace.lkshw"
+Active pane:   Just "Main.hs"
+Toolbar visible:
+               True
+FindbarState:  (True,FindState {entryStr = "\"b\"", entryHist = ["\"b\"","No params","General","eneral","general","unimplemented","non-function","intercalate","intercalata","resolve","evalToLiteral","C.object"], replaceStr = "float", replaceHist = [], caseSensitive = True, entireWord = False, wrapAround = True, regex = False, lineNr = 1})
+Recently opened files:
+               ["C:\\Users\\Brandon\\Documents\\GitHub\\arbre\\Arbre\\Mutation.hs","C:\\Users\\Brandon\\Documents\\GitHub\\arbre\\Mutation.hs","C:\\Users\\Brandon\\Documents\\GitHub\\Dust\\hs\\Dust.cabal","C:\\Users\\Brandon\\Documents\\GitHub\\arbre\\Arbre\\Context.hs","C:\\Users\\Brandon\\Documents\\GitHub\\arbre\\Arbre\\Eval.hs","C:\\Users\\Brandon\\Documents\\GitHub\\arbre\\bin\\test.hs","C:\\Users\\Brandon\\Documents\\GitHub\\arbre\\Arbre\\Short.hs","C:\\Users\\Brandon\\Documents\\GitHub\\arbre\\Arbre.cabal","C:\\Users\\Brandon\\Documents\\GitHub\\arbre\\Arbre\\Program.hs","C:\\Users\\Brandon\\Documents\\GitHub\\arbre\\Arbre\\Print.hs","C:\\Users\\Brandon\\Documents\\GitHub\\arbre\\Arbre\\Native.hs","C:\\Users\\Brandon\\Documents\\GitHub\\arbre\\test.hs"]
+Recently opened workspaces:
+               ["C:\\Users\\Brandon\\Documents\\GitHub\\Dust\\hs\\Dust-workspace.lkshw","C:\\Users\\Brandon\\leksah.lkshw"]
