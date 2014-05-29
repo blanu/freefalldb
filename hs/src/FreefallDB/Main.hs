@@ -15,14 +15,14 @@ import qualified Data.Map as M
 
 import FreefallDB.Network.TcpServer
 import FreefallDB.Network.Commands
-import FreefallDB.World.Galaxy
+import FreefallDB.World.Board
 
 main :: IO()
 main = do
   let host = "0.0.0.0"
   let port = 5847
 
-  galaxy <- openLocalStateFrom "galaxy/" (Galaxy M.empty)
+  galaxy <- openLocalStateFrom "boards/test/" (newBoard "test")
 
   server host port galaxy process
 

@@ -3,6 +3,7 @@
 module FreefallDB.World.Board
 (
   Post(..),
+  newBoard,
   newThread,
   getThreads
 )
@@ -32,6 +33,7 @@ data Post = Post
 
 data Board = Board
 {
+  name :: ByteString,
   lastid :: PostID,
   posts :: [Post],
   idmap :: M.Map PostID Post
@@ -41,6 +43,9 @@ data Board = Board
 $(deriveSafeCopy 0 'base ''PostID)
 $(deriveSafeCopy 0 'base ''Post)
 $(deriveSafeCopy 0 'base ''Board)
+
+newBoard :: ByteString -> Board
+newBoard n = Board n 0 [] M.empty []
 
 newThread :: (ByteString, ByteString) -> UTCTime -> Update Board ()
 newThread (t, b) now = do
