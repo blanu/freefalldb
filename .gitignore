@@ -4,3 +4,7 @@ test/*
 mconline/*
 .DS_Store
 *.pyc
+freefalldb/hs/server/boards
+freefalldb/hs/server/test
+freefalldb/hs/server/dist
+freefalldb/hs/client/dist
