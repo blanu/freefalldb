@@ -1,75 +1,107 @@
-{-# LANGUAGE TypeFamilies, DeriveDataTypeable, TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies, DeriveDataTypeable, TemplateHaskell, OverloadedStrings #-}
 
 module FreefallDB.World.Board
 (
+  PostID(..),
   Post(..),
-  newBoard,
-  newThread,
-  getThreads
+  Board(..),
+  addThread,
+  getName,
+  getThreads,
+  addPost,
+  addReply,
+  getPostByID
 )
 where
 
+import qualified Data.ByteString.Char8 as C
 import Data.Acid
+import Data.Acid.Advanced (query')
+import Data.Typeable
 import Control.Monad.State                   ( get, put )
 import Control.Monad.Reader                  ( ask )
 import Control.Applicative                   ( (<$>) )
 import Data.SafeCopy
-import Data.Map (Map, lookup, update)
+import Data.Map (Map, lookup)
 import qualified Data.Map as M
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import Data.Time
+import Network.MessagePackRpc.Server
+import Data.Label (mkLabels)
+import qualified Data.Label as L
 
-data PostID = PostID Integer
+data PostID = PostID Integer deriving (Eq, Ord, Show, Typeable)
 
-data Post = Post
-{
-  id    :: PostID,
-  date  :: UTCTime,
-  title :: ByteString,
-  body  :: ByteString,
-  replies :: [PostID]
-}
+data Post = Post {
+  _postid :: PostID,
+  _date  :: UTCTime,
+  _title :: ByteString,
+  _body  :: ByteString,
+  _replies :: [PostID]
+} deriving (Show, Typeable)
 
-data Board = Board
-{
-  name :: ByteString,
-  lastid :: PostID,
-  posts :: [Post],
-  idmap :: M.Map PostID Post
-  threads :: [PostID]
-}
+data Board = Board {
+  _name :: ByteString,
+  _lastid :: PostID,
+  _idmap :: M.Map PostID Post,
+  _threads :: [PostID]
+} deriving (Show, Typeable)
 
 $(deriveSafeCopy 0 'base ''PostID)
 $(deriveSafeCopy 0 'base ''Post)
 $(deriveSafeCopy 0 'base ''Board)
 
-newBoard :: ByteString -> Board
-newBoard n = Board n 0 [] M.empty []
+mkLabels [''PostID, ''Post, ''Board]
 
-addThread :: (ByteString, ByteString) -> UTCTime -> Update Board ()
+newBoard :: ByteString -> Board
+newBoard n = Board n (PostID 0) M.empty []
+
+idinc :: PostID -> PostID
+idinc (PostID i) = PostID (i+1)
+
+addThread :: (ByteString, ByteString) -> UTCTime -> Update Board (PostID)
 addThread (t, b) now = do
   board <- get
-  let postid = (lastid board) + 1
-  let post = Post postid now t b []
-  let posts' = (posts board)
-  let idmap' = update postid post (idmap board)
-  let threads' = postid : (threads board)
-  let board' = Board postid posts' idmap' threads'
+  let pid = idinc (L.get lastid board)
+  let post = Post pid now t b []
+  addPost board post
+  return pid
+
+addPost :: Board -> Post -> Update Board ()
+addPost board post = do
+  let pid = L.get postid post
+  let idmap' = M.insert pid post (L.get idmap board)
+  let threads' = pid : (L.get threads board)
+  let board' = Board (L.get name board) pid idmap' threads'
   put board'
+
+addReply :: (ByteString, ByteString) -> UTCTime -> PostID -> Update Board (Maybe PostID)
+addReply (t, b) now parentID = do
+  board <- get
+  let pid = idinc $ L.get lastid board
+  let post = Post pid now t b []
+  let maybeParent = M.lookup parentID (L.get idmap board)
+  case maybeParent of
+    Just parent -> do
+      let parent' = L.set replies (pid : L.get replies parent) parent
+      let pid = L.get postid post
+      let idmap' = M.insert parentID parent' $ M.insert pid post (L.get idmap board)
+      put $ Board (L.get name board) pid idmap' (L.get threads board)
+      return $ Just pid
+    Nothing -> return Nothing
 
 getThreads :: Query Board [PostID]
 getThreads = do
   board <- ask
-  return (threads board)
+  return $ L.get threads board
 
-$(makeAcidic ''Galaxy ['addThread, 'getThreads])
+getName :: Query Board ByteString
+getName = do
+  board <- ask
+  return $ L.get name board
 
-makeThread :: Board -> (ByteString, ByteString) -> IO()
-makeThread board (t, b) = do
-  now <- getCurrentTime
-  update board (newThread (t, b) now)
-  return ()
-threads :: Board -> IO [Integer]
-threads board = return $ query board getThreads
-
+getPostByID :: PostID -> Query Board (Maybe Post)
+getPostByID pid = do
+  board <- ask
+  return $ M.lookup pid (L.get idmap board)

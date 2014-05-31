@@ -1,33 +1,30 @@
-{-# LANGUAGE DeriveGeneric, DefaultSignatures #-}
+{-# LANGUAGE DeriveDataTypeable, TypeFamilies, TemplateHaskell #-}
 
-module FreefallDB.Main
-(
-    main
-) where
-
-import Network.Socket
-import Network.Socket.ByteString.Lazy (sendAll, getContents)
-import Data.Serialize
-import Control.Monad (forever, guard)
-import Control.Exception (tryJust)
-import System.IO.Error (isEOFError)
 import Data.Acid
-import qualified Data.Map as M
+import Control.Monad.State (get, put)
+import Control.Monad.Reader (ask)
+import qualified Data.ByteString.Char8 as C
 import Network.MessagePackRpc.Server
+import Data.Time
+import Data.SafeCopy
+import qualified Data.Map as M
 
-import FreefallDB.Network.TcpServer
-import FreefallDB.Network.Commands
 import FreefallDB.World.Board
+import FreefallDB.World.BoardServer
+
+--(makeAcidic ''Board ['addThread, 'addPost, 'getThreads, 'getName])
 
 main :: IO()
 main = do
-  let host = "0.0.0.0"
-  let port = 5847
+  acid <- openLocalStateFrom "boards/test" (Board (C.pack "test") (PostID 0) M.empty [])
 
-  board <- openLocalStateFrom "boards/test/" (newBoard "test")
-
-  serve port [
-    ("makeThread", prep makeThread)
+  serve 5894 [
+     ("getThreadIDs", prep acid getThreadIDs),
+     ("makeThread", prep acid makeThread),
+     ("reply", prep acid reply),
+     ("getPost", prep acid getPost)
    ]
 
-prep f = fun $ f board
+prep a f = toMethod $ f a
+
+--  closeAcidState acid
