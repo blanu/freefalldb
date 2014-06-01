@@ -8,3 +8,9 @@ hs/server/boards
 hs/server/test
 hs/server/dist
 hs/client/dist
+hs/client/lib
+hs/client/*.dll
+hs/client/*.a
+**/*.o
+**/*.hi
+hs/client/**/*.h

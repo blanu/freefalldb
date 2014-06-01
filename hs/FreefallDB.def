@@ -1,0 +1,6 @@
+LIBRARY freefalldb-client
+DESCRIPTION "FreefallDB"
+EXPORTS
+ HsStart @1
+ HsEnd  @2
+ makeThread @3
