@@ -27,7 +27,9 @@ library
   hs-source-dirs: src
   c-sources: src/cbits/StartEnd.c
   extensions: ForeignFunctionInterface
-  ghc-options: -no-hs-main -shared -o freefalldb-client.dll
   if os(windows)
+    ghc-options: -no-hs-main -shared -o freefalldb-client.dll
     build-depends: Win32
-
+  if os(darwin)
+    ghc-options: -no-hs-main -shared -o freefalldb-client.dynlib -optl-shared -optl-v
+    ld-options: -read-only-relocs supress -v -shared

@@ -38,4 +38,4 @@ getPost :: Int -> (ByteString, ByteString, [Int])
 getPost postid = do
   unsafePerformIO $ runClientResult "166.78.129.122" 5894 $ BC.getPost postid
 
-foreign export stdcall makeThread :: CString -> CString -> IO CDouble
+foreign export ccall  makeThread :: CString -> CString -> IO CDouble
